@@ -1,0 +1,467 @@
+
+
+
+```{r}
+library(tidyverse)
+df <- read.csv('turnover.csv')
+glimpse(df)
+```
+
+  
+
+```{r}
+# Check duplicate row
+print(paste('Duplicate row:' ,sum(duplicated(df))))
+
+# Delete duplicate roe
+df <- df[!duplicated(df), ]
+row.names(df) <- NULL
+nrow(df)
+```
+
+```{r}
+
+fil_df <- df %>%
+  filter(event == 1)
+  
+gender_header_gender <- prop.table(xtabs(fil_df$event ~ fil_df$gender + fil_df$head_gender)) %>%
+  as.data.frame() %>%
+  dplyr::select(gender = fil_df.gender, header_gender = fil_df.head_gender, total = Freq) %>%
+  arrange(desc(total))
+
+gender_header_gender[,3]  = round(gender_header_gender[,3], 2)
+
+gender_header_gender
+
+```
+
+
+
+#### gender vs coach
+
+```{r}
+
+gender_coach <- prop.table(xtabs(fil_df$event ~ fil_df$gender + fil_df$coach)) %>%
+  as.data.frame() %>%
+  dplyr::select(gender = fil_df.gender, coach = fil_df.coach, total = Freq) %>% 
+  arrange(desc(total))
+  
+
+gender_coach[,3]  = round(gender_coach[,3], 2)
+
+gender_coach 
+
+# as you can see that f and coach_no has the most turnover rate. so we try to input gender:coach in our model.
+# Comparing to total resignation
+```
+
+
+
+#### Building industry has the most turnover rate at 76% comparing to its own industry.
+
+```{r}
+ind_leave <- fil_df %>%
+ count(industry) %>%
+ dplyr::select(industry, leave = n)
+
+ind_total <- df %>%
+ count(industry) %>%
+ dplyr::select(total = n)
+
+options(repr.plot.width=10, repr.plot.height=5)
+cbind(ind_leave, ind_total) %>%
+ mutate(proportion = round(leave/total, 2)) %>%
+ dplyr::select(industry, proportion) %>%
+ arrange(desc(proportion)) %>%
+ head(3) %>%
+ ggplot(aes(x= reorder(industry, proportion) , y=proportion)) +
+ geom_bar(stat="identity", fill='#009E73') + 
+ geom_text(aes(label=proportion ), hjust=1.9, color="white", size=5.5) + 
+ theme( text = element_text(size = 25)) + 
+ labs(x = 'Industry', y = 'Proportion') +
+ coord_flip()
+ 
+```
+
+    
+#### Employees who transports by car and bus resign from company at 52% comparing to its own transportation type.
+
+
+```{r}
+way_leave <- fil_df %>%
+ count(way) %>%
+ dplyr::select(way, leave = n)
+
+way_total <- df %>%
+ count(way) %>%
+ dplyr::select(total = n)
+
+options(repr.plot.width=10, repr.plot.height=5)
+cbind(way_leave, way_total) %>%
+ mutate(proportion = round(leave/total, 2)) %>%
+ dplyr::select(way, proportion) %>%
+ arrange(desc(proportion)) %>%
+ head(3) %>%
+ ggplot(aes(x=reorder(way, proportion), y=proportion)) +
+ geom_bar(stat="identity", fill='#009E73') + 
+ geom_text(aes(label=proportion), hjust=1.9, color="white", size=5.5) + 
+ theme( text = element_text(size = 25)) + 
+ labs(x = 'Way', y = 'Proportion') +
+ coord_flip()
+```
+
+
+
+#### 66% of employees who get the position by referal method leave the company.
+
+```{r}
+traffic_leave <- fil_df %>%
+ count(traffic) %>%
+ dplyr::select(traffic, leave = n)
+
+traffic_total <- df %>%
+ count(traffic) %>%
+ dplyr::select(total = n)
+
+options(repr.plot.width=10, repr.plot.height=5)
+cbind(traffic_leave, traffic_total) %>%
+ mutate(proportion = round(leave/total, 2)) %>%
+ dplyr::select(traffic, proportion) %>%
+ arrange(desc(proportion)) %>%
+ head(3) %>%
+ ggplot(aes(x=reorder(traffic, proportion), y=proportion)) +
+ geom_bar(stat="identity", fill='#009E73') + 
+ geom_text(aes(label=proportion), hjust=1.9, color="white", size=5.5) + 
+ theme( text = element_text(size = 25)) + 
+ labs(x = 'Traffic', y = 'Proportion') +
+ coord_flip()
+```
+
+
+
+#### 100% employees who is specialized in teaching from the data set leave the company.
+
+```{r}
+profession_leave <- fil_df %>%
+ count(profession) %>%
+ dplyr::select(profession, leave = n)
+
+profession_total <- df %>%
+ count(profession) %>%
+ dplyr::select(total = n)
+
+options(repr.plot.width=10, repr.plot.height=5)
+cbind(profession_leave, profession_total) %>%
+ mutate(proportion = round(leave/total, 2)) %>%
+ dplyr::select(profession, proportion) %>%
+ arrange(desc(proportion)) %>%
+ head(3) %>%
+ ggplot(aes(x=reorder(profession, proportion), y=proportion), fig(5,49)) +
+ geom_bar(stat="identity", fill='#009E73') + 
+ geom_text(aes(label=proportion), hjust=1.9, color="white", size=5.5) + 
+ theme( text = element_text(size = 25)) + 
+ labs(x = 'Profession', y = 'Proportion') +
+ coord_flip()
+```
+
+
+#### Male supervisor has a little effect from female supervisor to resignation.
+
+
+```{r}
+head_gender_leave <- fil_df %>%
+ count(head_gender) %>%
+ dplyr::select(head_gender, leave = n)
+
+head_gender_total <- df %>%
+ count(head_gender) %>%
+ dplyr::select(total = n)
+
+options(repr.plot.width=12, repr.plot.height=6)
+cbind(head_gender_leave, head_gender_total) %>%
+ mutate(proportion = round(leave/total*100, 2)) %>%
+ dplyr::select(head_gender, proportion) %>%
+ arrange(desc(proportion)) %>%
+ head(3) %>%
+  ggplot(aes(x = '', y= proportion, fill= head_gender)) +
+  geom_col() +
+  geom_text(aes(label = paste(proportion, '%')), 
+            position = position_stack(vjust = 0.5)) +
+  coord_polar(theta = "y") + 
+  theme( text = element_text(size = 20),
+         axis.text = element_blank(),
+         axis.ticks = element_blank(),
+         panel.grid  = element_blank(),
+         axis.title.x = element_blank(),
+         axis.title.y = element_blank())
+```
+
+
+#### Proportion of greywage of resignation
+
+
+```{r}
+
+library(ggplot2)
+
+pie_chart <- df %>% 
+  dplyr::select(event, greywage) %>%
+  filter(event == 1) %>%
+  count(greywage) %>%
+  dplyr::select (greywage, total = n) %>%
+  mutate(percent = round(total/sum(total) * 100, 2))
+  
+options(repr.plot.width=12, repr.plot.height=6)
+ggplot(pie_chart, aes(x = '', y= percent, fill= greywage)) +
+  geom_col() +
+  geom_text(aes(label = paste(percent, '%')), 
+            position = position_stack(vjust = 0.5),
+            size=6,
+            color = 'white') +
+  coord_polar(theta = "y") +
+  theme( text = element_text(size = 20),
+         axis.text = element_blank(),
+         axis.ticks = element_blank(),
+         panel.grid  = element_blank(),
+         axis.title.x = element_blank(),
+         axis.title.y = element_blank())
+
+```
+
+#### White wage in Retail industry has the most turnover rate about 20%
+
+
+```{r}
+wage_df <- df %>%
+            filter(event == 1)
+
+prop.table (xtabs(wage_df$event ~ wage_df$greywage + wage_df$industry)) %>%
+  as.data.frame() %>%
+  arrange(desc(Freq)) %>%
+  head(5)
+
+```
+
+
+# Age and Work Experience distribution
+
+
+```{r}
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+filter_df <- df %>%
+    filter(event == 1)
+
+hist(filter_df$age, breaks = 100, col = cbPalette[4], main = "Age Distribution", border = F, xlab = "Age")
+
+hist(filter_df$stag, breaks = 100, col = cbPalette[4], main = "Work Experience Distribution", border = F, xlab = "Work Experience")
+
+
+
+
+```
+
+
+
+# Goal1: Indicate factor that is associated with event
+
+# Plot Sample logit vs features
+
+
+```{r}
+
+logitplot<-function(y, x,ncat=15,...)
+{
+  brksx<-unique(quantile(x,probs=(0:ncat)/ncat))
+  nbrksx<-length(brksx)
+  cutx<-cut(x,breaks=brksx,include.lowest=TRUE)
+  yt<-table(data.frame(y,cutx))
+  mx<-tapply(x,cutx,FUN=mean)
+  logity<-log((yt[2,]+0.5)/(yt[1,]+0.5))
+  plot(mx,logity,...)
+}
+
+#reduced_model <-  step(glm(event ~ stag + I(stag^2) + gender + age + I(age^2) + I(age^3) + industry + profession + traffic + coach + head_gender + greywage + way + extraversion + I(extraversion^2) + I(extraversion^3) + independ + selfcontrol + I(selfcontrol^2)+ anxiety + I(anxiety^2) + novator + gender:head_gender, family = binomial(link = 'logit'), data = df) ,direction= "backward")
+
+
+par(mfrow=c(3,3))
+logitplot(df$event,df$stag,xlab="stag",ylab="adjusted sample logit") # second order
+logitplot(df$event,df$age,xlab="age",ylab="adjusted sample logit") # Third order
+logitplot(df$event,df$extraversion,xlab="extraversion",ylab="adjusted sample logit") # Third order
+logitplot(df$event,df$independ,xlab="independ",ylab="adjusted sample logit")
+logitplot(df$event,df$selfcontrol,xlab="selfcontrol",ylab="adjusted sample logit") # second order
+logitplot(df$event,df$anxiety,xlab="anxiety",ylab="adjusted sample logit") # second order
+logitplot(df$event,df$novator,xlab="novator",ylab="adjusted sample logit")
+```
+
+
+# Create Reduced model from data set by using step (AIC)
+
+
+```{r}
+reduced_assoc_model <-  step(glm(event ~ stag + I(stag^2) + gender + age + I(age^2) + I(age^3) + industry + profession + traffic + coach + head_gender + greywage + way + extraversion + I(extraversion^2) + I(extraversion^3) + independ + selfcontrol + I(selfcontrol^2)+ anxiety + I(anxiety^2) + novator + gender:coach , family = binomial(link = 'logit'), data = df) ,direction= "backward")
+
+```
+
+
+# Add  missing main effect after using step
+
+
+```{r}
+reduced_assoc_model <- glm(event ~ stag + gender + age + I(age^2) + I(age^3) + industry + profession + traffic + head_gender + way, family = binomial(link = 'logit'), data = df)
+summary(reduced_assoc_model)
+
+```
+
+
+    
+
+# Create Full model from data set
+
+
+```{r}
+full_assoc_model = glm(event ~ stag + I(stag^2) + gender + age + I(age^2) + I(age^3) + industry + profession + traffic + coach + head_gender + greywage + way + extraversion + I(extraversion^2) + I(extraversion^3) + independ + selfcontrol + I(selfcontrol^2)+ anxiety + I(anxiety^2) + novator + gender:coach , family = binomial(link = 'logit'), data = df)
+
+summary(full_assoc_model)
+
+
+```
+
+
+
+# Compare nested model
+
+
+```{r}
+LRT <- deviance(reduced_assoc_model) - deviance(full_assoc_model)
+pchisq(LRT, df.residual(reduced_assoc_model) - df.residual(full_assoc_model), lower.tail = F)
+```
+
+
+#### H0: Reduced model
+#### H1: Full model
+#### P-Value: 0.942961760169536 > 0.05 (Not Significant)
+#### Conclusion: We fail to reject H0. We choose reduced model.
+
+# Test goodness of fit test by HL Test
+
+
+```{r}
+hosmerlem <-function (y, yhat, g = 10)
+{
+cutyhat <- cut(yhat, breaks = quantile(yhat, probs = seq(0,1, 1/g)), include.lowest = T)
+obs <- xtabs(cbind(1 - y, y) ~ cutyhat)
+expect <- xtabs(cbind(1 - yhat, yhat) ~ cutyhat)
+chisq <- sum((obs - expect)^2/expect)
+P <- 1 - pchisq(chisq, g - 2)
+c("X^2" = chisq, Df = g - 2, "P(>Chi)" = P)
+}
+
+hosmerlem(df$event, reduced_assoc_model$fitted.values)
+```
+
+
+#### H0: Model fits data
+#### H1: Model does not fit data
+#### P-Value: 0.739632078353907 > 0.05 (Not Significant)
+#### Conclusion: We fail to reject H0. The Model fits data.
+
+# Check influential point
+
+
+```{r}
+
+plot(reduced_assoc_model, 4)
+abline(h = qf(0.5, reduced_assoc_model$rank, nrow(df)-reduced_assoc_model$rank), col='blue') # Rule1
+abline(h = 4/nrow(df), col='red') # Rule2
+
+print(paste('Rule1 F(0.5, p+1, n-p-1):',qf(0.5, reduced_assoc_model$rank, nrow(df)-reduced_assoc_model$rank)))
+print(paste('Rule2 4/n:',4/nrow(df)))
+
+
+
+```
+
+
+#### From Cook's distance, We use 50th percentile of F(46-1,1116-46+1 ) = 0.98. Thus, there is no an influential point in our data.
+
+# Check multicolinearity with VIF
+
+
+```{r}
+str(df)
+```
+
+
+```{r}
+library(usdm)
+vif(df[,c(-2,-3,-5,-6,-7,-8,-9,-10, -11)])
+
+
+```
+
+
+#### For numerical variables, there are no multicolinearity because their VIF value are nearly 1. 
+
+
+```{r}
+summary(reduced_assoc_model)
+```
+
+
+# Interpret coefficient of logistic regression
+#### exp{-2.889e-01(0-1)} = 1.334958226
+#### Comparing a woman with a man of the same age, the estimated odds ratio is exp{-2.889e-01(0-1)} = 1.334958226. Thus, a woman’s odds were about 1.33 times the odds of turnover of a man of the same age.
+
+
+# Predictive Performance
+
+# Check AUC of ROC
+
+
+```{r}
+library(pROC);
+
+y_pred_reduce <-predict(reduced_assoc_model , newdata=df, type="response")
+predclass_reduce<-rep(0, nrow(df))
+truth_reduce<-df$event
+
+roc(truth_reduce, y_pred_reduce, percent=TRUE, plot=TRUE,print.auc=TRUE, auc.polygon=TRUE, xlim=c(100,0))
+```
+
+
+# Check ROC curve to get youden index
+
+
+```{r}
+# Use 0.5 as cutoff point
+
+predclass_reduce<-rep(0, nrow(df))
+
+# Use youden index as cutoff point
+youden_index <- 0.68 + 0.79 - 1 #youden_index <- 0.47
+
+#youden_index <- 0.68 + 0.65 - 1
+
+predclass_reduce[y_pred_reduce>=youden_index]<-1
+truth_reduce<-df$event
+xtab_reduce <-table(truth_reduce, predclass_reduce)
+xtab_reduce
+```
+
+
+        
+# Calculate Accuracy, Sensitivity, Specificity
+
+```{r}
+accuracy <- (xtab_reduce[1,1] + xtab_reduce[2,2]) / sum(xtab_reduce)
+sensitivity <- xtab_reduce[2,2]/ (xtab_reduce[2,2] + xtab_reduce[2,1])
+specification <- xtab_reduce[1,1] / (xtab_reduce[1,1] + xtab_reduce[1,2])
+false_positive_rate <- 1-specification
+print(paste('Accuracy:', round(accuracy, 2))) 
+print(paste('Sensitivity:', round(sensitivity, 2))) # ความแม่นของการตรวจว่า ลาออก
+print(paste('Specification:', round(specification, 2))) # ความแม่นของการตรวจว่า ไม่ลาออก
+print(paste('False positive rate:', round(false_positive_rate, 2))) # โอกาสผิดของการตรวจว่า ลาออก
+```
+
+  
